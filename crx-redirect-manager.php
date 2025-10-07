@@ -253,7 +253,6 @@ class CRX_Redirect_Manager
         if ($path === '')
             return '';
 
-        // اگر مدیر URL رمزگذاری‌شده (٪کد) وارد کرده، آن را به یونیکد تبدیل کن
         $path = rawurldecode($path);
 
         $parsed = wp_parse_url($path);
@@ -261,7 +260,6 @@ class CRX_Redirect_Manager
             $path = $parsed['path'];
         }
 
-        // حذف prefix مسیر خانگی سایت (اگر WordPress در ساب‌دایرکتوری است)
         $home_path = wp_parse_url(home_url('/'), PHP_URL_PATH);
         if ($home_path && $home_path !== '/') {
             $hp = '/' . trim($home_path, '/') . '/';
@@ -278,7 +276,6 @@ class CRX_Redirect_Manager
             $path = '/' . $path;
         }
 
-        // یکدست‌سازی اسلش پایانی/ابتدایی
         $path = preg_replace('~//+~', '/', $path);
 
         return $path;
