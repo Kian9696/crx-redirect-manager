@@ -2,7 +2,7 @@
 /**
  * Plugin Name: CRX Redirect Manager
  * Description: Create and manage all types of 301, 302, and 405 redirects with the ability to select the execution engine
- * Version: 2.0.0
+ * Version: 2.1.0
  * Author: KIAN KIANI
  * License: GPLv2 or later
  * Text Domain: crx-redirect
@@ -93,7 +93,8 @@ class CRX_Redirect_Manager
                             <input type="text" id="crx_from" name="crx_from" class="regular-text"
                                 placeholder="/about-us یا https://example.com/about-us یا regex:^blog/(.*)$" required>
                             <p class="description">برای الگوی Regex با <code>regex:</code> شروع کنید. مثال:
-                                <code>regex:^blog/(.*)$</code></p>
+                                <code>regex:^blog/(.*)$</code>
+                            </p>
                         </td>
                     </tr>
                     <tr>
@@ -210,7 +211,9 @@ class CRX_Redirect_Manager
 
             $rules[] = [
                 'from' => self::normalize_path($from),
-                'to' => (int) $type === 410 ? '' : esc_url_raw($to),
+                'to' => (int) $type === 410
+                    ? ''
+                    : (preg_match('#^https?://#i', $to) ? esc_url_raw($to) : self::normalize_path($to)),
                 'type' => in_array((int) $type, [301, 302, 410], true) ? (int) $type : 301,
                 'regex' => $is_regex ? 1 : 0,
                 'engine' => $engine,
@@ -249,10 +252,16 @@ class CRX_Redirect_Manager
         $path = trim($path);
         if ($path === '')
             return '';
+
+        // اگر مدیر URL رمزگذاری‌شده (٪کد) وارد کرده، آن را به یونیکد تبدیل کن
+        $path = rawurldecode($path);
+
         $parsed = wp_parse_url($path);
         if (isset($parsed['path'])) {
             $path = $parsed['path'];
         }
+
+        // حذف prefix مسیر خانگی سایت (اگر WordPress در ساب‌دایرکتوری است)
         $home_path = wp_parse_url(home_url('/'), PHP_URL_PATH);
         if ($home_path && $home_path !== '/') {
             $hp = '/' . trim($home_path, '/') . '/';
@@ -261,14 +270,20 @@ class CRX_Redirect_Manager
                 $path = '/' . ltrim(substr($pp, strlen($hp)), '/');
             }
         }
+
         if ($path === '') {
             $path = '/';
         }
         if ($path[0] !== '/') {
             $path = '/' . $path;
         }
+
+        // یکدست‌سازی اسلش پایانی/ابتدایی
+        $path = preg_replace('~//+~', '/', $path);
+
         return $path;
     }
+
 
     /* ======================= Lifecycle ======================= */
     public static function on_activate()
